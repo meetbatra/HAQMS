@@ -1,5 +1,8 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
 
 // Load environment variables
@@ -13,13 +16,23 @@ const queueRoutes = require('./routes/queue');
 const reportRoutes = require('./routes/reports');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
-// Enable CORS for all origins (weak/broad CORS config)
-app.use(cors());
+// Enable Helmet for security headers
+app.use(helmet());
 
-// Body parser
-app.use(express.json());
+// Enable cookie parser
+app.use(cookieParser());
+
+// Enable CORS securely
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+}));
+
+// Body parser with size limit to prevent payload DoS
+app.use(express.json({ limit: '10kb' }));
 
 // Simple request logger
 app.use((req, res, next) => {
@@ -45,14 +58,11 @@ app.get('/', (req, res) => {
 });
 
 // GLOBAL ERROR HANDLER
-// BUG: Improper error handling. It returns the raw error stack trace to the client,
-// which leaks details about database types, schema layout, and file paths.
 app.use((err, req, res, next) => {
   console.error('[CRITICAL-ERROR]:', err);
   res.status(500).json({
     message: 'An unexpected internal server error occurred!',
-    error: err.message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    // Never leak stack trace or internal error messages to client
   });
 });
 
@@ -64,8 +74,13 @@ app.listen(PORT, () => {
   console.log(`===================================================`);
 });
 
-// Catch unhandled rejections
+// Catch unhandled rejections and uncaught exceptions to prevent silent failures
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Intentionally do not exit process so candidates see unhandled promise logs
+  console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught Exception:', err);
+  process.exit(1);
 });

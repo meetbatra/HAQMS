@@ -19,7 +19,7 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className={`${inter.variable} font-sans min-h-screen gradient-bg`}>
+      <body className={`${inter.variable} font-sans min-h-screen antialiased bg-stone-100 dark:bg-stone-950 text-stone-900 dark:text-stone-50 selection:bg-blue-500 selection:text-white`}>
         <AuthProvider>
           {children}
         </AuthProvider>

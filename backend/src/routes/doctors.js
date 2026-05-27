@@ -1,9 +1,8 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma');
 const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // GET /api/doctors
 // Retrieve list of doctors with special search filtering
@@ -13,31 +12,18 @@ router.get('/', authenticate, async (req, res) => {
   try {
     const { search, specialization } = req.query;
 
-    let query = 'SELECT * FROM "Doctor"';
-    const conditions = [];
+    const doctors = await prisma.doctor.findMany({
+      where: {
+        AND: [
+          search ? { name: { contains: search, mode: 'insensitive' } } : {},
+          specialization && specialization !== 'All' ? { specialization } : {},
+        ],
+      },
+    });
 
-    if (search) {
-      // Direct string interpolation - VULNERABLE TO SQL INJECTION!
-      // Example exploit: search=House%' UNION SELECT id, email, password, name, role, '09:00', '17:00', 0, id FROM "User" --
-      conditions.push(`name ILIKE '%${search}%'`);
-    }
-
-    if (specialization && specialization !== 'All') {
-      conditions.push(`specialization = '${specialization}'`);
-    }
-
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
-
-    console.log(`[SQL-DEBUG] Executing Query: ${query}`);
-    const doctors = await prisma.$queryRawUnsafe(query);
-
-    // Inconsistent API formatting (directly sending array)
     res.json(doctors);
   } catch (error) {
-    // Leaks query syntax details to candidate/attacker
-    res.status(500).json({ error: 'Database execution failure', sqlMessage: error.message });
+    res.status(500).json({ error: 'Failed to fetch doctors' });
   }
 });
 
@@ -48,24 +34,12 @@ router.get('/stats', authenticate, async (req, res) => {
   try {
     const start = Date.now();
 
-    // Independent database calls are run sequentially with await, stalling the event loop
-    const totalDoctors = await prisma.doctor.count();
-    
-    const surgeonsCount = await prisma.doctor.count({
-      where: { department: 'Surgery' },
-    });
-
-    const averageFee = await prisma.doctor.aggregate({
-      _avg: {
-        consultationFee: true,
-      },
-    });
-
-    const highestExperience = await prisma.doctor.aggregate({
-      _max: {
-        experience: true,
-      },
-    });
+    const [totalDoctors, surgeonsCount, averageFee, highestExperience] = await Promise.all([
+      prisma.doctor.count(),
+      prisma.doctor.count({ where: { department: 'Surgery' } }),
+      prisma.doctor.aggregate({ _avg: { consultationFee: true } }),
+      prisma.doctor.aggregate({ _max: { experience: true } }),
+    ]);
 
     const durationMs = Date.now() - start;
 
@@ -79,11 +53,10 @@ router.get('/stats', authenticate, async (req, res) => {
       },
       debugInfo: {
         executionTimeMs: durationMs,
-        notes: 'Loaded sequentially for safety. Optimization needed.'
       }
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
 
@@ -100,7 +73,7 @@ router.get('/:id', authenticate, async (req, res) => {
 
     res.json(doctor);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to fetch doctor' });
   }
 });
 
