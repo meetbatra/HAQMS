@@ -6,9 +6,6 @@ const router = express.Router();
 
 // GET /api/appointments
 // List all appointments
-// PERFORMANCE BUG: Classic N+1 Query Issue!
-// Instead of using Prisma's include, it loops through each appointment and executes
-// individual select statements for Patient and Doctor details.
 router.get('/', authenticate, async (req, res) => {
   try {
     const { doctorId, status } = req.query;
@@ -38,9 +35,6 @@ router.get('/', authenticate, async (req, res) => {
 
 // POST /api/appointments
 // Book an appointment
-// DESIGN BUG: Duplicate-prone schema. No unique index blocks duplicate appointment bookings.
-// In this API, we have a half-hearted verification that is easily bypassed or logically flawed,
-// allowing multiple bookings for the exact same date and doctor.
 router.post('/', authenticate, async (req, res) => {
   try {
     const { patientId, doctorId, appointmentDate, reason } = req.body;
@@ -116,6 +110,14 @@ router.patch('/:id', authenticate, authorize(['ADMIN', 'RECEPTIONIST', 'DOCTOR']
       where: { id },
       data: { status },
     });
+
+    if (status === 'COMPLETED' || status === 'CANCELLED') {
+      const queueStatus = status === 'COMPLETED' ? 'COMPLETED' : 'SKIPPED';
+      await prisma.queueToken.updateMany({
+        where: { appointmentId: id },
+        data: { status: queueStatus },
+      });
+    }
 
     res.json(updated);
   } catch (error) {

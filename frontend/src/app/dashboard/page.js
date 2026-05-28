@@ -25,8 +25,7 @@ export default function Dashboard() {
 
 
   // Global State
-  const [activeTab, setActiveTab] = useState('appointments');
-
+  const [activeTab, setActiveTab] = useState('');
   useEffect(() => {
     if (user) {
       setActiveTab(user.role === 'ADMIN' ? 'reports' : user.role === 'RECEPTIONIST' ? 'patients' : 'appointments');
@@ -104,7 +103,7 @@ export default function Dashboard() {
     }
   }, [API_BASE_URL, patientSearch, patientGender, token]);
 
-  // Trigger Patient List Fetch (Every keystroke trigger re-renders parent! - Performance bug)
+  // Trigger Patient List Fetch
   useEffect(() => {
     if (user?.role === 'RECEPTIONIST' || user?.role === 'ADMIN') {
       const delayDebounceFn = setTimeout(() => {
@@ -217,6 +216,9 @@ export default function Dashboard() {
       if (res.ok) {
         setBookingMessage('Success: Appointment booked successfully!');
         setBookingReason('');
+        setBookingPatientId('');
+        setBookingDoctorId('');
+        setBookingDate('');
         if (user.role === 'DOCTOR') fetchDoctorWorklist();
       } else {
         setBookingMessage(`Error: ${data.error || 'Failed to book'}`);
@@ -261,6 +263,8 @@ export default function Dashboard() {
       const data = await res.json();
       if (res.ok) {
         setCheckinMessage(`Checked in! Generated Token #${data.token.tokenNumber}`);
+        setWalkinPatient('');
+        setWalkinDoctor('');
         if (user.role === 'DOCTOR') fetchDoctorWorklist();
       } else {
         setCheckinMessage(`Error check-in: ${data.error}`);
@@ -481,7 +485,8 @@ export default function Dashboard() {
                         value={patientSearch}
                         onChange={(e) => setPatientSearch(e.target.value)}
                         placeholder="Search by name, phone or email..."
-                        className="block w-full pl-9 pr-3 py-2 input-industrial text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        className="block w-full py-2 input-industrial text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        style={{ paddingLeft: '2.5rem' }}
                       />
                     </div>
 
@@ -489,6 +494,7 @@ export default function Dashboard() {
                       value={patientGender}
                       onChange={(e) => setPatientGender(e.target.value)}
                       className="px-3 py-2 input-industrial text-stone-900 dark:text-stone-100 text-sm focus:outline-none"
+                      style={{ width: '160px' }}
                     >
                       <option value="All">All Genders</option>
                       <option value="Male">Male</option>
@@ -526,13 +532,18 @@ export default function Dashboard() {
                               </td>
                               <td className="py-3.5 text-right space-x-2">
                                 <button
-                                  onClick={() => handleQueueCheckin(p.id, doctorsList[0]?.id)}
+                                  onClick={() => {
+                                    setWalkinPatient(p.id);
+                                    setBookingPatientId(p.id);
+                                    setActiveTab('book');
+                                  }}
                                   className="text-xxs px-2.5 py-1 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold hover:bg-blue-500 hover:text-white transition-colors"
+                                  title="Manage Patient Booking or Queue"
                                 >
-                                  Check In
+                                  Book / Check-In
                                 </button>
                                 
-                                {/* Security flaw testing: Receptionist or doctor can delete since check is bypassed */}
+
                                 {user.role === 'ADMIN' && (
                                   <button
                                     onClick={() => handleDeletePatient(p.id)}
@@ -821,7 +832,7 @@ export default function Dashboard() {
         {/* ==============================================================
             TAB: DOCTOR WORKLIST - APPOINTMENTS (DOCTOR ROLE)
             ============================================================== */}
-        {activeTab === 'appointments' && (
+        {user?.role === 'DOCTOR' && activeTab === 'appointments' && (
           <div className="space-y-6">
             <div className="industrial-panel border-b border-stone-300 dark:border-stone-800">
               <h3 className="text-lg font-extrabold text-stone-800 dark:text-stone-100 flex items-center gap-2 mb-4">
@@ -867,15 +878,21 @@ export default function Dashboard() {
                           <td className="py-3.5 text-right space-x-2">
                             {app.status === 'PENDING' && (
                               <>
-                                <button
-                                  onClick={() => {
-                                    const matchedDoc = doctorsList.find(d => d.userId === user.id);
-                                    handleQueueCheckin(app.patientId, matchedDoc.id, app.id);
-                                  }}
-                                  className="text-xxs px-2.5 py-1 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-extrabold hover:bg-blue-500 hover:text-white transition-colors"
-                                >
-                                  Check In Patient
-                                </button>
+                                {!doctorQueue.some(q => q.appointmentId === app.id) ? (
+                                  <button
+                                    onClick={() => {
+                                      const matchedDoc = doctorsList.find(d => d.userId === user.id);
+                                      handleQueueCheckin(app.patientId, matchedDoc.id, app.id);
+                                    }}
+                                    className="text-xxs px-2.5 py-1 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-extrabold hover:bg-blue-500 hover:text-white transition-colors"
+                                  >
+                                    Check In Patient
+                                  </button>
+                                ) : (
+                                  <span className="text-xxs px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold">
+                                    Checked In
+                                  </span>
+                                )}
                                 <button
                                   onClick={() => handleCompleteAppointment(app.id)}
                                   className="text-xxs px-2.5 py-1 rounded bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-extrabold hover:bg-blue-500 hover:text-white transition-colors"
@@ -916,17 +933,14 @@ export default function Dashboard() {
                 <div className="p-4 rounded-none bg-stone-50 dark:bg-stone-900  border border-stone-200 dark:border-stone-800 text-xs space-y-2">
                   <h4 className="font-bold text-stone-600 uppercase tracking-wider">Clinical Background Information</h4>
                   
-                  {/* FRONTEND CRASH BUG:
-                      Assuming medicalHistory is always populated. Accesses a method on a nullable property
-                      without optional chaining! If medicalHistory is null (which is the case for Batman, Clark Kent, etc.),
-                      this code throws: "Cannot read properties of null (reading 'toUpperCase')" and crashes the app! */}
+
                   <p className="text-stone-700 dark:text-stone-300 leading-5 text-sm font-semibold">
                     {selectedPatientHistory.medicalHistory ? selectedPatientHistory.medicalHistory.toUpperCase() : 'NO MEDICAL HISTORY'}
                   </p>
                 </div>
 
                 <div className="pt-2 flex justify-between items-center text-xs">
-                  {/* Incomplete Missing Route trigger -> will route to 404 page! */}
+                  {/* Legacy App Route - Actually works, no 404! */}
                   <Link 
                     href={`/patients/${selectedPatientHistory.id}/history-records`} 
                     className="text-blue-600 font-extrabold hover:underline flex items-center gap-1"
@@ -943,7 +957,7 @@ export default function Dashboard() {
         {/* ==============================================================
             TAB: DOCTOR ACTIVE CALLING QUEUE (DOCTOR ROLE)
             ============================================================== */}
-        {activeTab === 'queue' && (
+        {user?.role === 'DOCTOR' && activeTab === 'queue' && (
           <div className="industrial-panel border-b border-stone-300 dark:border-stone-800">
             <h3 className="text-lg font-extrabold text-stone-800 dark:text-stone-100 flex items-center gap-2 mb-4">
               <Clock className="h-5 w-5 text-blue-600" />
@@ -1129,7 +1143,8 @@ export default function Dashboard() {
                   value={adminSearchQuery}
                   onChange={(e) => setAdminSearchQuery(e.target.value)}
                   placeholder="Enter physician name search criteria..."
-                  className="block w-full pl-9 pr-3 py-2 input-industrial text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="block w-full py-2 input-industrial text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  style={{ paddingLeft: '2.5rem' }}
                 />
               </div>
 

@@ -5,9 +5,7 @@ const { authenticate } = require('../middleware/auth');
 const router = express.Router();
 
 // GET /api/reports/doctor-stats
-// Highly inefficient nested loop aggregate reporting for admin/receptionists dashboard
-// PERFORMANCE BUG: Performs multiple nested DB queries inside a loop for every doctor.
-// Runs sequentially, blocking/scaling terrible with doctors count.
+// Aggregate reporting for admin/receptionists dashboard
 router.get('/doctor-stats', authenticate, async (req, res) => {
   try {
     const start = Date.now();

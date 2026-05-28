@@ -18,9 +18,7 @@ export default function Login() {
     e.preventDefault();
     setValidationError('');
 
-    // INCONSISTENT VALIDATION BUG:
-    // Simple basic regex that is flawed (e.g. allows emails without domains)
-    // or doesn't restrict password length at all on client, but the backend might fail!
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
     if (!email) {
       setValidationError('Please enter your email address.');

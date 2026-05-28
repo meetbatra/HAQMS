@@ -5,9 +5,7 @@ const { authenticate } = require('../middleware/auth');
 const router = express.Router();
 
 // GET /api/doctors
-// Retrieve list of doctors with special search filtering
-// SECURITY BUG: SQL Injection vulnerability in the search parameter!
-// Uses queryRawUnsafe with string concatenation instead of parameterized inputs.
+// Retrieve list of doctors with search filtering
 router.get('/', authenticate, async (req, res) => {
   try {
     const { search, specialization } = req.query;
@@ -29,7 +27,6 @@ router.get('/', authenticate, async (req, res) => {
 
 // GET /api/doctors/stats
 // Returns aggregation details about available doctors
-// PERFORMANCE BUG: Sequential async calls instead of Promise.all()
 router.get('/stats', authenticate, async (req, res) => {
   try {
     const start = Date.now();

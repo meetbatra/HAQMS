@@ -53,7 +53,7 @@ app.get('/', (req, res) => {
   res.json({
     message: 'Hospital Appointment and Queue Management System (HAQMS) Backend API',
     status: 'Running',
-    version: '1.0.0-deliberate-bugs'
+    version: '1.0.0'
   });
 });
 

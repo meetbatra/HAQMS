@@ -20,7 +20,7 @@ export default function Home() {
         </p>
         
         <p className="mt-6 text-lg text-slate-700 dark:text-slate-300 max-w-xl mx-auto font-medium">
-          Welcome to the HAQMS testing environment. This portal serves as a deliberately flawed, 
+          Welcome to the HAQMS testing environment. This portal serves as a
           fully functional reference application designed to evaluate software engineering candidates.
         </p>
 
@@ -63,7 +63,7 @@ export default function Home() {
       </div>
 
       <footer className="text-center text-slate-600 dark:text-slate-400 text-xs mt-8">
-        HAQMS v1.0.0-deliberate-bugs &copy; {new Date().getFullYear()} Candidate Evaluation Framework.
+        HAQMS v1.0.0 &copy; {new Date().getFullYear()}
       </footer>
     </div>
   );

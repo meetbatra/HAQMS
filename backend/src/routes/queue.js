@@ -14,6 +14,10 @@ router.get('/', async (req, res) => {
     if (doctorId) where.doctorId = doctorId;
     if (status) where.status = status;
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    where.createdAt = { gte: today };
+
     const tokens = await prisma.queueToken.findMany({
       where,
       include: {
@@ -31,9 +35,6 @@ router.get('/', async (req, res) => {
 
 // POST /api/queue/checkin
 // Generate a new queue token for a patient
-// CONCURRENCY/RACE CONDITION BUG: Token increment uses aggregate read followed by create.
-// Introduce a deliberate asynchronous delay (setTimeout) to force a wide race window
-// where concurrent check-ins assign the exact same token number.
 router.post('/checkin', authenticate, async (req, res) => {
   try {
     const { patientId, doctorId, appointmentId } = req.body;
@@ -44,6 +45,27 @@ router.post('/checkin', authenticate, async (req, res) => {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    const existingToken = await prisma.queueToken.findFirst({
+      where: {
+        patientId,
+        doctorId,
+        appointmentId: appointmentId || undefined,
+        createdAt: { gte: today },
+        status: { in: ['WAITING', 'CALLING'] }
+      },
+      include: {
+        patient: true,
+        doctor: true,
+      }
+    });
+
+    if (existingToken) {
+      return res.status(200).json({
+        message: 'Patient is already in the queue.',
+        token: existingToken,
+      });
+    }
 
     const newToken = await prisma.$transaction(async (tx) => {
       const maxTokenResult = await tx.queueToken.aggregate({
@@ -103,6 +125,14 @@ router.patch('/:id', authenticate, async (req, res) => {
         doctor: true,
       },
     });
+
+    if (updatedToken.appointmentId && (status === 'COMPLETED' || status === 'SKIPPED')) {
+      const appStatus = status === 'COMPLETED' ? 'COMPLETED' : 'CANCELLED';
+      await prisma.appointment.updateMany({
+        where: { id: updatedToken.appointmentId },
+        data: { status: appStatus },
+      });
+    }
 
     res.json(updatedToken);
   } catch (error) {

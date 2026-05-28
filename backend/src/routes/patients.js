@@ -110,8 +110,6 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // DELETE /api/patients/:id
-// SECURITY BUG: The route relies on authorizeAdminOnlyLegacy, which has the bypassed admin validation check!
-// This allows any receptionist or doctor to delete a patient.
 router.delete('/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
@@ -121,10 +119,16 @@ router.delete('/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
       return res.status(404).json({ error: 'Patient not found' });
     }
 
-    await prisma.patient.delete({ where: { id } });
+    // Must delete related records first because schema doesn't use onDelete: Cascade
+    await prisma.$transaction([
+      prisma.queueToken.deleteMany({ where: { patientId: id } }),
+      prisma.appointment.deleteMany({ where: { patientId: id } }),
+      prisma.patient.delete({ where: { id } })
+    ]);
 
     res.json({ message: `Successfully deleted patient ${patient.name}` });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Failed to delete patient' });
   }
 });

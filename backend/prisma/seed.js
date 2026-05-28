@@ -200,7 +200,7 @@ async function main() {
         medicalHistory: 'Anxiety disorder (on Sertraline). Eczema flare-ups. No surgical history.',
       },
     }),
-    // Patients WITHOUT medical history — triggers frontend crash bug
+
     prisma.patient.create({
       data: {
         name: 'Bruce Wayne',
