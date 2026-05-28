@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
 
 // Load environment variables
@@ -18,19 +17,16 @@ const reportRoutes = require('./routes/reports');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Trust proxy for secure cookies behind Heroku load balancer
+// Trust proxy for Heroku load balancer
 app.set('trust proxy', 1);
 
 // Enable Helmet for security headers
 app.use(helmet());
 
-// Enable cookie parser
-app.use(cookieParser());
-
-// Enable CORS securely
+// Enable CORS for cross-domain API access (JWT via Authorization header, not cookies)
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
+  credentials: false, // Set to false - we use JWT in headers, not cookies
   methods: ['GET', 'POST', 'PATCH', 'DELETE'],
 }));
 

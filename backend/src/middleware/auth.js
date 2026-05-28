@@ -6,16 +6,12 @@ if (!JWT_SECRET) throw new Error('JWT_SECRET env variable is not set');
 // Authentication middleware
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  let token;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.split(' ')[1];
-  } else if (req.cookies && req.cookies.haqms_token) {
-    token = req.cookies.haqms_token;
-  }
-
-  if (!token) {
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Access denied. No token provided.' });
   }
+  
+  const token = authHeader.split(' ')[1];
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET); 
