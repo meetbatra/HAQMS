@@ -8,21 +8,27 @@ import { User, Calendar, Activity, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function HistoryRecords() {
-  const { user, token, API_BASE_URL } = useAuth();
+  const { user, token, API_BASE_URL, loading } = useAuth();
   const router = useRouter();
   const params = useParams();
   
   const [patient, setPatient] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Show loading spinner while context initializes
-  if (!user) {
+  // Wait for auth context to load
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
+  }
+
+  // After loading, check if authenticated. If not, redirect to login
+  if (!token || !user) {
+    router.push('/login');
+    return null;
   }
 
   useEffect(() => {
@@ -31,9 +37,7 @@ export default function HistoryRecords() {
     const fetchPatientData = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/patients/${params.id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          credentials: 'include'
         });
 
         const data = await response.json();
@@ -46,7 +50,7 @@ export default function HistoryRecords() {
       } catch (err) {
         setError(err.message);
       } finally {
-        setLoading(false);
+        setPageLoading(false);
       }
     };
 
@@ -68,7 +72,7 @@ export default function HistoryRecords() {
           Back to Dashboard
         </Link>
 
-        {loading ? (
+        {pageLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
           </div>

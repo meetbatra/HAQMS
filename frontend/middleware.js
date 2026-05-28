@@ -12,12 +12,9 @@ export function middleware(request) {
     return NextResponse.next();
   }
 
-  // If not public and no token, redirect to login
-  if (!token && !isPublic) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  // If token exists and trying to access login, redirect to dashboard
+  // Only redirect authenticated users away from login (not the other way around)
+  // Component-level guards will handle redirecting unauthenticated users to login
+  // This prevents race conditions where cookie isn't synced yet on cross-domain redirects
   if (token && path === '/login') {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
