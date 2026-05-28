@@ -125,7 +125,6 @@ export default function Dashboard() {
   const fetchDoctorsDropdown = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/doctors`, {
-        credentials: 'include',
         credentials: 'include'
       });
       if (res.ok) {
