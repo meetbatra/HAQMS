@@ -13,13 +13,14 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Navigation Guard for already logged in users
   useEffect(() => {
-    if (!loading && token) {
+    if (!loading && token && !isSubmitting) {
       router.push('/');
     }
-  }, [token, loading, router]);
+  }, [token, loading, router, isSubmitting]);
 
   // Local validation issues
   const [validationError, setValidationError] = useState('');
@@ -27,6 +28,7 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setValidationError('');
+    setIsSubmitting(true);
 
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -48,6 +50,7 @@ export default function Login() {
     const result = await login(email, password);
     if (!result.success) {
       setValidationError(result.error || 'Invalid credentials');
+      setIsSubmitting(false); // Reset on failure
     }
   };
 
