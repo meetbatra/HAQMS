@@ -27,7 +27,7 @@ export default function Home() {
         {/* Action Cards */}
         <div className="mt-12 grid gap-8 sm:grid-cols-2 max-w-2xl mx-auto">
           {/* Card 1: Staff Portal */}
-          <Link href="/login" className="group">
+          <Link href="/dashboard" className="group">
             <div className="glass p-8 rounded-2xl border-t border-l border-white/40 dark:border-white/10 text-left hover:border-blue-500/50 hover:shadow-blue-500/20 transition-all duration-300 transform hover:-translate-y-2">
               <div className="p-3 bg-blue-600/10 text-blue-700 dark:text-blue-400 rounded-xl w-fit group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300 shadow-inner">
                 <Users className="h-6 w-6" />

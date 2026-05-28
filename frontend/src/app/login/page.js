@@ -1,16 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { User, Lock, Activity, Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
-  const { login, error: authError, loading } = useAuth();
+  const { login, error: authError, loading, token } = useAuth();
+  const router = useRouter();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   
+  // Navigation Guard for already logged in users
+  useEffect(() => {
+    if (!loading && token) {
+      router.push('/');
+    }
+  }, [token, loading, router]);
+
   // Local validation issues
   const [validationError, setValidationError] = useState('');
 
