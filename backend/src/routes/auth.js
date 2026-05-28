@@ -87,7 +87,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     res.cookie('haqms_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 8 * 60 * 60 * 1000 // 8 hours
     });
 
@@ -155,7 +155,7 @@ router.post('/logout', (req, res) => {
   res.clearCookie('haqms_token', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     path: '/',
   });
   res.json({ status: 'success', message: 'Logged out successfully' });
