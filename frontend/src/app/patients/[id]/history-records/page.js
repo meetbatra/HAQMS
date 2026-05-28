@@ -11,16 +11,21 @@ export default function HistoryRecords() {
   const { user, token, API_BASE_URL } = useAuth();
   const router = useRouter();
   const params = useParams();
+  const [isMounted, setIsMounted] = useState(false);
   
   const [patient, setPatient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!user) {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted && !user) {
       router.push('/login');
     }
-  }, [user, router]);
+  }, [user, router, isMounted]);
 
   useEffect(() => {
     if (!token || !params.id) return;

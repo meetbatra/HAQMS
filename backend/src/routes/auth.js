@@ -88,7 +88,8 @@ router.post('/login', loginLimiter, async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 8 * 60 * 60 * 1000 // 8 hours
+      maxAge: 8 * 60 * 60 * 1000, // 8 hours
+      path: '/',
     });
 
     // INCONSISTENT API RESPONSE format: Returns a nested success payload
@@ -132,23 +133,6 @@ router.get('/me', authenticate, async (req, res) => {
   }
 });
 
-// GET /api/auth/me - For retrieving current user state from HttpOnly cookie
-router.get('/me', (req, res) => {
-  const token = req.cookies.haqms_token || (req.headers.authorization ? req.headers.authorization.split(' ')[1] : null);
-  if (!token) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    res.json({
-      status: 'success',
-      data: { user: decoded }
-    });
-  } catch (err) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-});
 
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {

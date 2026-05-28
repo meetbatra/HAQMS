@@ -14,13 +14,19 @@ import Link from 'next/link';
 export default function Dashboard() {
   const { user, token, API_BASE_URL, logout, loading } = useAuth();
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Navigation Guard
+  // Hydration guard - wait for component to mount and context to initialize
   useEffect(() => {
-    if (!loading && !token) {
+    setIsMounted(true);
+  }, []);
+
+  // Navigation Guard - only check after hydration
+  useEffect(() => {
+    if (isMounted && !loading && !token) {
       router.push('/login');
     }
-  }, [token, loading, router]);
+  }, [token, loading, router, isMounted]);
 
 
 
