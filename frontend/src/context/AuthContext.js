@@ -19,50 +19,68 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      const token = localStorage.getItem('haqms_token');
       await fetch(`${API_BASE_URL}/auth/logout`, {
         method: 'POST',
-        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
     } catch (e) {
       console.error('Logout error:', e);
     }
+    // Always clear local state regardless of backend response
+    localStorage.removeItem('haqms_token');
     setToken(null);
     setUser(null);
     router.push('/login');
   };
 
   useEffect(() => {
-    // Always verify auth state with backend using HttpOnly cookie
-    // Never rely on sessionStorage for auth state (client-only, not sent with requests)
-    fetch(`${API_BASE_URL}/auth/me`, { credentials: 'include' })
-      .then(res => {
-        if (!res.ok) {
-          console.warn(`[AUTH] /auth/me returned ${res.status}`);
-          return null;
+    // On app load, try to restore token from localStorage
+    const storedToken = localStorage.getItem('haqms_token');
+    
+    if (storedToken) {
+      console.log('[AUTH] Found token in localStorage, verifying with backend...');
+      // Verify token is still valid by calling /auth/me
+      fetch(`${API_BASE_URL}/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${storedToken}`
         }
-        return res.json();
       })
-      .then(data => {
-        if (data && data.status === 'success' && data.data.user) {
-          console.log('[AUTH] Session verified with user:', data.data.user.email);
-          // Use a dummy token to indicate authenticated state (actual token is in HttpOnly cookie)
-          const dummyToken = 'authenticated';
-          setToken(dummyToken);
-          setUser(data.data.user);
-        } else {
-          console.log('[AUTH] No valid session');
+        .then(res => {
+          if (!res.ok) {
+            console.warn(`[AUTH] /auth/me returned ${res.status}, token may be expired`);
+            localStorage.removeItem('haqms_token');
+            return null;
+          }
+          return res.json();
+        })
+        .then(data => {
+          if (data && data.status === 'success' && data.data.user) {
+            console.log('[AUTH] Session verified with user:', data.data.user.email);
+            setToken(storedToken);
+            setUser(data.data.user);
+          } else {
+            console.log('[AUTH] Token validation failed');
+            localStorage.removeItem('haqms_token');
+            setToken(null);
+            setUser(null);
+          }
+        })
+        .catch(e => {
+          console.error('[AUTH] Failed to verify token:', e.message);
+          localStorage.removeItem('haqms_token');
           setToken(null);
           setUser(null);
-        }
-      })
-      .catch(e => {
-        console.error('[AUTH] Failed to verify session with backend:', e.message);
-        setToken(null);
-        setUser(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      console.log('[AUTH] No token in localStorage');
+      setLoading(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -75,7 +93,6 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
@@ -86,11 +103,14 @@ export const AuthProvider = ({ children }) => {
       }
 
       const receivedUser = data.data.user;
-      
-      // Use dummy token to indicate authenticated state
-      // The actual JWT token is stored in HttpOnly cookie on backend
-      const dummyToken = 'authenticated';
-      setToken(dummyToken);
+      const receivedToken = data.data.token;
+
+      // Store JWT in localStorage for persistent auth across page reloads
+      localStorage.setItem('haqms_token', receivedToken);
+      console.log('[AUTH] Token stored in localStorage');
+
+      // Set state
+      setToken(receivedToken);
       setUser(receivedUser);
 
       router.push('/dashboard');
@@ -113,7 +133,6 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ name, email, password, role }),
       });
 
@@ -133,6 +152,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Helper function to get authorization headers
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('haqms_token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  };
+
 
 
   return (
@@ -145,7 +170,8 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
-        API_BASE_URL, // Exposing hardcoded API base URL for convenience
+        API_BASE_URL,
+        getAuthHeaders, // Helper to get Authorization headers
       }}
     >
       {children}

@@ -37,7 +37,7 @@ export default function HistoryRecords() {
     const fetchPatientData = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/patients/${params.id}`, {
-          credentials: 'include'
+          headers: { ...getAuthHeaders() }
         });
 
         const data = await response.json();

@@ -93,7 +93,7 @@ export default function Dashboard() {
     try {
       // Inefficient memory pagination called from client
       const res = await fetch(`${API_BASE_URL}/patients?page=${page}&limit=5&search=${patientSearch}&gender=${patientGender}`, {
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       const data = await res.json();
       if (data.success) {
@@ -125,7 +125,7 @@ export default function Dashboard() {
   const fetchDoctorsDropdown = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/doctors`, {
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       if (res.ok) {
         const data = await res.json();
@@ -163,7 +163,7 @@ export default function Dashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          credentials: 'include'
+          headers: { ...getAuthHeaders() }
         },
         body: JSON.stringify({
           name: regName,
@@ -209,7 +209,7 @@ export default function Dashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          credentials: 'include'
+          headers: { ...getAuthHeaders() }
         },
         body: JSON.stringify({
           patientId: bookingPatientId,
@@ -241,7 +241,7 @@ export default function Dashboard() {
     try {
       const res = await fetch(`${API_BASE_URL}/patients/${id}`, {
         method: 'DELETE',
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       const data = await res.json();
       if (res.ok) {
@@ -263,7 +263,7 @@ export default function Dashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          credentials: 'include'
+          headers: { ...getAuthHeaders() }
         },
         body: JSON.stringify({ patientId, doctorId, appointmentId })
       });
@@ -293,7 +293,7 @@ export default function Dashboard() {
 
       // 1. Fetch appointments for this doctor (N+1 database queries triggers inside server)
       const appRes = await fetch(`${API_BASE_URL}/appointments?doctorId=${matchedDoc.id}`, {
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       const appData = await appRes.json();
       if (appData.success) {
@@ -302,7 +302,7 @@ export default function Dashboard() {
 
       // 2. Fetch queue list for this doctor today
       const queueRes = await fetch(`${API_BASE_URL}/queue?doctorId=${matchedDoc.id}`, {
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       const queueData = await queueRes.json();
       setDoctorQueue(queueData);
@@ -326,7 +326,7 @@ export default function Dashboard() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          credentials: 'include'
+          headers: { ...getAuthHeaders() }
         },
         body: JSON.stringify({ status: newStatus })
       });
@@ -345,7 +345,7 @@ export default function Dashboard() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          credentials: 'include'
+          headers: { ...getAuthHeaders() }
         },
         body: JSON.stringify({ status: 'COMPLETED' })
       });
@@ -367,7 +367,7 @@ export default function Dashboard() {
     try {
       // Calls slow nested aggregation endpoint
       const res = await fetch(`${API_BASE_URL}/reports/doctor-stats`, {
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       const data = await res.json();
       if (data.success) {
@@ -384,7 +384,7 @@ export default function Dashboard() {
   const searchPhysiciansAdmin = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/doctors?search=${adminSearchQuery}`, {
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       const data = await res.json();
       if (Array.isArray(data)) {
