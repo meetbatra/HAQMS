@@ -8,7 +8,7 @@ import { User, Calendar, Activity, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function HistoryRecords() {
-  const { user, token, API_BASE_URL, loading } = useAuth();
+  const { user, token, API_BASE_URL, loading, getAuthHeaders } = useAuth();
   const router = useRouter();
   const params = useParams();
   

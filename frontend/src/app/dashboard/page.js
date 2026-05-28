@@ -12,7 +12,7 @@ import {
 import Link from 'next/link';
 
 export default function Dashboard() {
-  const { user, token, API_BASE_URL, logout, loading } = useAuth();
+  const { user, token, API_BASE_URL, logout, loading, getAuthHeaders } = useAuth();
   const router = useRouter();
 
   // Wait for auth state to load

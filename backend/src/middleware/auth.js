@@ -7,10 +7,10 @@ if (!JWT_SECRET) throw new Error('JWT_SECRET env variable is not set');
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
   let token;
-  if (req.cookies && req.cookies.haqms_token) {
-    token = req.cookies.haqms_token;
-  } else if (authHeader && authHeader.startsWith('Bearer ')) {
+  if (authHeader && authHeader.startsWith('Bearer ')) {
     token = authHeader.split(' ')[1];
+  } else if (req.cookies && req.cookies.haqms_token) {
+    token = req.cookies.haqms_token;
   }
 
   if (!token) {

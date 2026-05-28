@@ -84,21 +84,10 @@ router.post('/login', loginLimiter, async (req, res) => {
       { expiresIn: '8h' }
     );
 
-    res.cookie('haqms_token', token, {
-      httpOnly: true,
-      secure: true, // Always secure in production
-      sameSite: 'none', // Allow cross-site requests from Vercel
-      maxAge: 8 * 60 * 60 * 1000, // 8 hours
-      path: '/',
-      domain: process.env.COOKIE_DOMAIN || undefined, // Allow subdomain cookies
-    });
-
-    // INCONSISTENT API RESPONSE format: Returns a nested success payload
-    // Different from registration response style
     res.json({
       status: 'success',
       data: {
-        token, // Kept for backwards compatibility but we rely on cookie
+        token,
         user: {
           id: user.id,
           email: user.email,
@@ -137,13 +126,6 @@ router.get('/me', authenticate, async (req, res) => {
 
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {
-  res.clearCookie('haqms_token', {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    path: '/',
-    domain: process.env.COOKIE_DOMAIN || undefined,
-  });
   res.json({ status: 'success', message: 'Logged out successfully' });
 });
 
