@@ -11,21 +11,19 @@ export default function HistoryRecords() {
   const { user, token, API_BASE_URL } = useAuth();
   const router = useRouter();
   const params = useParams();
-  const [isMounted, setIsMounted] = useState(false);
   
   const [patient, setPatient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (isMounted && !user) {
-      router.push('/login');
-    }
-  }, [user, router, isMounted]);
+  // Show loading spinner while context initializes
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (!token || !params.id) return;

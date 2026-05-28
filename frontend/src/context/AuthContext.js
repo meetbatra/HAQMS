@@ -35,20 +35,28 @@ export const AuthProvider = ({ children }) => {
     // Always verify auth state with backend using HttpOnly cookie
     // Never rely on sessionStorage for auth state (client-only, not sent with requests)
     fetch(`${API_BASE_URL}/auth/me`, { credentials: 'include' })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          console.warn(`[AUTH] /auth/me returned ${res.status}`);
+          return null;
+        }
+        return res.json();
+      })
       .then(data => {
-        if (data.status === 'success' && data.data.user) {
+        if (data && data.status === 'success' && data.data.user) {
+          console.log('[AUTH] Session verified with user:', data.data.user.email);
           // Use a dummy token to indicate authenticated state (actual token is in HttpOnly cookie)
           const dummyToken = 'authenticated';
           setToken(dummyToken);
           setUser(data.data.user);
         } else {
+          console.log('[AUTH] No valid session');
           setToken(null);
           setUser(null);
         }
       })
       .catch(e => {
-        console.error('Failed to verify session with backend', e);
+        console.error('[AUTH] Failed to verify session with backend:', e.message);
         setToken(null);
         setUser(null);
       })

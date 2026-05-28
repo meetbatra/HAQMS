@@ -14,19 +14,15 @@ import Link from 'next/link';
 export default function Dashboard() {
   const { user, token, API_BASE_URL, logout, loading } = useAuth();
   const router = useRouter();
-  const [isMounted, setIsMounted] = useState(false);
 
-  // Hydration guard - wait for component to mount and context to initialize
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // Navigation Guard - only check after hydration
-  useEffect(() => {
-    if (isMounted && !loading && !token) {
-      router.push('/login');
-    }
-  }, [token, loading, router, isMounted]);
+  // Just render if loading - middleware already redirected if no auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
 
 

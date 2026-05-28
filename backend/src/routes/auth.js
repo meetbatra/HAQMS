@@ -86,10 +86,11 @@ router.post('/login', loginLimiter, async (req, res) => {
 
     res.cookie('haqms_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: true, // Always secure in production
+      sameSite: 'none', // Allow cross-site requests from Vercel
       maxAge: 8 * 60 * 60 * 1000, // 8 hours
       path: '/',
+      domain: process.env.COOKIE_DOMAIN || undefined, // Allow subdomain cookies
     });
 
     // INCONSISTENT API RESPONSE format: Returns a nested success payload
@@ -138,9 +139,10 @@ router.get('/me', authenticate, async (req, res) => {
 router.post('/logout', (req, res) => {
   res.clearCookie('haqms_token', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: true,
+    sameSite: 'none',
     path: '/',
+    domain: process.env.COOKIE_DOMAIN || undefined,
   });
   res.json({ status: 'success', message: 'Logged out successfully' });
 });
