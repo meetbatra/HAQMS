@@ -18,6 +18,9 @@ const reportRoutes = require('./routes/reports');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Trust proxy for secure cookies behind Heroku load balancer
+app.set('trust proxy', 1);
+
 // Enable Helmet for security headers
 app.use(helmet());
 
